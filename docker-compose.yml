@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  # Backend API Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend
+    container_name: signspeak-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONPATH=/app
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - signspeak-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+    container_name: signspeak-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+    depends_on:
+      - backend
+    networks:
+      - signspeak-network
+    restart: unless-stopped
+
+  # Database Service
+  database:
+    image: postgres:15-alpine
+    container_name: signspeak-db
+    environment:
+      - POSTGRES_DB=signspeak_ai
+      - POSTGRES_USER=signspeak_user
+      - POSTGRES_PASSWORD=signspeak_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - signspeak-network
+    restart: unless-stopped
+
+  # Redis Cache Service
+  redis:
+    image: redis:7-alpine
+    container_name: signspeak-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - signspeak-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: signspeak-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - signspeak-network
+    restart: unless-stopped
+
+  # Model Training Service
+  training:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: signspeak-training
+    volumes:
+      - ./datasets:/app/datasets
+      - ./models:/app/models
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - signspeak-network
+    profiles:
+      - training
+    command: ["python", "datasets/scripts/train_model.py"]
+
+  # Development Environment
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: signspeak-dev
+    ports:
+      - "5000:5000"
+      - "8888:8888"
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - FLASK_ENV=development
+      - PYTHONPATH=/app
+    networks:
+      - signspeak-network
+    command: ["/dev-start.sh"]
+
+networks:
+  signspeak-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
