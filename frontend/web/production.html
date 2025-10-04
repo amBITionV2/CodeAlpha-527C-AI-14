@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignSpeak AI - Production Interface</title>
+    <link rel="stylesheet" href="production-styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="app-title">
+                    <i class="fas fa-hands"></i>
+                    SignSpeak AI - Production
+                </h1>
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span class="status-text" id="statusText">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Camera Section -->
+            <section class="camera-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-video"></i> Real-time Gesture Recognition</h2>
+                    <div class="camera-controls">
+                        <button id="startCamera" class="btn btn-primary">
+                            <i class="fas fa-play"></i> Start Camera
+                        </button>
+                        <button id="stopCamera" class="btn btn-secondary" disabled>
+                            <i class="fas fa-stop"></i> Stop Camera
+                        </button>
+                        <button id="captureGesture" class="btn btn-success" disabled>
+                            <i class="fas fa-hand-rock"></i> Capture Gesture
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="camera-container">
+                    <div class="video-wrapper">
+                        <video id="cameraFeed" autoplay muted playsinline></video>
+                        <div class="detection-overlay" id="detectionOverlay">
+                            <div class="detection-box"></div>
+                            <div class="detection-text">Position your hands in the frame</div>
+                        </div>
+                    </div>
+                    
+                    <div class="gesture-results">
+                        <div class="gesture-display">
+                            <h3>Recognized Gesture</h3>
+                            <div class="gesture-name" id="gestureName">Ready</div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" id="confidenceFill"></div>
+                                <span class="confidence-text" id="confidenceText">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3D Avatar Section -->
+            <section class="avatar-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-user"></i> 3D Avatar Animation</h2>
+                    <div class="avatar-controls">
+                        <button id="resetAvatar" class="btn btn-info">
+                            <i class="fas fa-undo"></i> Reset Pose
+                        </button>
+                        <button id="testAnimation" class="btn btn-warning">
+                            <i class="fas fa-play-circle"></i> Test Animation
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="avatar-container">
+                    <div id="threejs-container" class="threejs-container"></div>
+                    <div class="current-gesture-display">
+                        <div class="gesture-label">Current Gesture:</div>
+                        <div class="gesture-name" id="currentGestureName">Ready</div>
+                        <div class="gesture-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="gestureProgress"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Speech Processing Section -->
+            <section class="speech-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-microphone"></i> Speech Processing</h2>
+                    <div class="speech-controls">
+                        <button id="startListening" class="btn btn-primary">
+                            <i class="fas fa-microphone"></i> Start Listening
+                        </button>
+                        <button id="stopListening" class="btn btn-secondary" disabled>
+                            <i class="fas fa-microphone-slash"></i> Stop Listening
+                        </button>
+                        <select id="languageSelect" class="language-select">
+                            <option value="en">English</option>
+                            <option value="hi">Hindi</option>
+                            <option value="ta">Tamil</option>
+                            <option value="te">Telugu</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="speech-container">
+                    <div class="speech-input">
+                        <h3>Speech Recognition</h3>
+                        <div class="waveform" id="waveform">
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                        </div>
+                        <div class="speech-status" id="speechStatus">Ready to listen</div>
+                        <div class="recognized-text" id="recognizedText"></div>
+                    </div>
+                    
+                    <div class="speech-output">
+                        <h3>Text to Speech</h3>
+                        <textarea id="ttsInput" placeholder="Enter text to convert to speech...">Hello, welcome to SignSpeak AI!</textarea>
+                        <button id="textToSpeechBtn" class="btn btn-success">
+                            <i class="fas fa-volume-up"></i> Convert to Speech
+                        </button>
+                        <audio id="audioOutput" controls style="width: 100%; margin-top: 10px;"></audio>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Text Processing Section -->
+            <section class="text-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-keyboard"></i> Text Processing</h2>
+                </div>
+                
+                <div class="text-container">
+                    <div class="text-input">
+                        <h3>Text to Gesture Conversion</h3>
+                        <textarea id="textInput" placeholder="Enter text to convert to sign language gestures...">Hello, how are you today? Thank you for using SignSpeak AI!</textarea>
+                        <button id="convertToGestureBtn" class="btn btn-primary">
+                            <i class="fas fa-hands"></i> Convert to Gestures
+                        </button>
+                    </div>
+                    
+                    <div class="gesture-sequence">
+                        <h3>Gesture Sequence</h3>
+                        <div class="sequence-container" id="gestureSequence">
+                            <div class="sequence-placeholder">No gestures yet</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Status Section -->
+            <section class="status-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-cogs"></i> System Status</h2>
+                </div>
+                
+                <div class="status-container">
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <div class="status-icon">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <div class="status-info">
+                                <h4>Gesture Recognition</h4>
+                                <div class="status-value" id="gestureStatus">Initializing...</div>
+                            </div>
+                        </div>
+                        
+                        <div class="status-item">
+                            <div class="status-icon">
+                                <i class="fas fa-microphone"></i>
+                            </div>
+                            <div class="status-info">
+                                <h4>Speech Processing</h4>
+                                <div class="status-value" id="speechStatus">Initializing...</div>
+                            </div>
+                        </div>
+                        
+                        <div class="status-item">
+                            <div class="status-icon">
+                                <i class="fas fa-cube"></i>
+                            </div>
+                            <div class="status-info">
+                                <h4>3D Avatar</h4>
+                                <div class="status-value" id="avatarStatus">Initializing...</div>
+                            </div>
+                        </div>
+                        
+                        <div class="status-item">
+                            <div class="status-icon">
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <div class="status-info">
+                                <h4>API Connection</h4>
+                                <div class="status-value" id="apiStatus">Connecting...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2024 SignSpeak AI - Production System</p>
+                <div class="footer-links">
+                    <a href="#" id="helpLink">Help</a>
+                    <a href="#" id="settingsLink">Settings</a>
+                    <a href="#" id="aboutLink">About</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="three_js_avatar.js"></script>
+    <script src="production-script.js"></script>
+</body>
+</html>
