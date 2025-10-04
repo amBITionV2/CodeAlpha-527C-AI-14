@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignSpeak AI - Real-Time Sign Language Communication</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-hands"></i>
+                    <h1>SignSpeak AI</h1>
+                </div>
+                <div class="status-indicator">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Camera Section -->
+            <section class="camera-section">
+                <div class="camera-container">
+                    <video id="cameraFeed" autoplay muted playsinline></video>
+                    <div class="camera-overlay">
+                        <div class="gesture-detection-area">
+                            <div class="detection-box" id="detectionBox"></div>
+                            <div class="gesture-info">
+                                <h3>Gesture Recognition</h3>
+                                <p id="gestureText">Point your hands at the camera</p>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" id="confidenceFill"></div>
+                                </div>
+                                <span class="confidence-text" id="confidenceText">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="camera-controls">
+                        <button id="startCamera" class="btn btn-primary">
+                            <i class="fas fa-camera"></i> Start Camera
+                        </button>
+                        <button id="captureGesture" class="btn btn-secondary" disabled>
+                            <i class="fas fa-hand-paper"></i> Capture Gesture
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Communication Section -->
+            <section class="communication-section">
+                <div class="communication-grid">
+                    <!-- Speech Input -->
+                    <div class="input-panel">
+                        <h3><i class="fas fa-microphone"></i> Speech Input</h3>
+                        <div class="speech-controls">
+                            <button id="startListening" class="btn btn-success">
+                                <i class="fas fa-microphone"></i> Start Speaking
+                            </button>
+                            <button id="stopListening" class="btn btn-danger" disabled>
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                        </div>
+                        <div class="speech-status">
+                            <div class="waveform" id="waveform"></div>
+                            <p id="speechStatus">Click "Start Speaking" to begin</p>
+                        </div>
+                        <div class="recognized-text">
+                            <h4>Recognized Text:</h4>
+                            <div class="text-display" id="recognizedText">No speech detected</div>
+                        </div>
+                    </div>
+
+                    <!-- Text Input -->
+                    <div class="input-panel">
+                        <h3><i class="fas fa-keyboard"></i> Text Input</h3>
+                        <div class="text-input-container">
+                            <textarea id="textInput" placeholder="Type your message here..."></textarea>
+                            <button id="convertToGesture" class="btn btn-primary">
+                                <i class="fas fa-hands"></i> Convert to Gesture
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Output Display -->
+                    <div class="output-panel">
+                        <h3><i class="fas fa-eye"></i> ISL Gesture Output</h3>
+                        <div class="gesture-sequence" id="gestureSequence">
+                            <div class="gesture-item">
+                                <span class="gesture-name">HELLO</span>
+                                <span class="gesture-duration">1.0s</span>
+                            </div>
+                        </div>
+                        <div class="avatar-container">
+                            <div class="avatar-preview" id="avatarPreview">
+                                <div class="avatar-skeleton">
+                                    <div class="head"></div>
+                                    <div class="torso"></div>
+                                    <div class="left-arm"></div>
+                                    <div class="right-arm"></div>
+                                </div>
+                                <div class="current-gesture" id="currentGesture">
+                                    <span class="gesture-label">Current Gesture:</span>
+                                    <span class="gesture-name" id="gestureName">Ready</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- API Testing Section -->
+            <section class="api-section">
+                <h3><i class="fas fa-code"></i> API Testing</h3>
+                <div class="api-controls">
+                    <button id="testHealth" class="btn btn-info">
+                        <i class="fas fa-heartbeat"></i> Test Health
+                    </button>
+                    <button id="testSpeech" class="btn btn-warning">
+                        <i class="fas fa-volume-up"></i> Test Speech
+                    </button>
+                    <button id="testGesture" class="btn btn-success">
+                        <i class="fas fa-hand-rock"></i> Test Gesture
+                    </button>
+                </div>
+                <div class="api-results" id="apiResults">
+                    <h4>API Response:</h4>
+                    <pre id="apiResponse">No tests run yet</pre>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2024 SignSpeak AI - Bridging Communication Gaps</p>
+                <div class="footer-links">
+                    <a href="#" id="helpLink">Help</a>
+                    <a href="#" id="settingsLink">Settings</a>
+                    <a href="#" id="aboutLink">About</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
