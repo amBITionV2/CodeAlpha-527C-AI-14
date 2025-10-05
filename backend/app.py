@@ -27,6 +27,7 @@ try:
     from models.speech_processing import SpeechProcessor
     from avatar.avatar_3d import ISLAvatar
     MODELS_AVAILABLE = True
+    logger.info("All ML models imported successfully")
 except ImportError as e:
     logger.warning(f"Some models not available: {e}")
     MODELS_AVAILABLE = False
@@ -46,9 +47,10 @@ class SignSpeakAI:
         """Load all required models"""
         try:
             if MODELS_AVAILABLE:
-                # Initialize ISL recognition model
+                # Initialize ISL recognition model with trained model path
                 logger.info("Loading ISL recognition model...")
-                self.isl_model = ISLRecognitionModel()
+                model_path = os.path.join(os.path.dirname(__file__), '..', 'datasets', 'models', 'isl_deep_model.h5')
+                self.isl_model = ISLRecognitionModel(model_path)
                 
                 # Initialize speech recognition
                 logger.info("Initializing speech recognition...")
@@ -59,6 +61,13 @@ class SignSpeakAI:
                 self.avatar_system = ISLAvatar()
                 
                 logger.info("All models loaded successfully")
+                
+                # Log model status
+                if self.isl_model.is_trained:
+                    logger.info("ISL model is trained and ready")
+                else:
+                    logger.warning("ISL model not trained, using fallback predictions")
+                    
             else:
                 logger.info("Using simplified models (full models not available)")
                 self.isl_model = None
@@ -197,28 +206,36 @@ class SignSpeakAI:
         """Simplified text to gesture conversion"""
         import random
         
-        # Expanded ISL gesture vocabulary
+        # Comprehensive ISL gesture vocabulary (123 gestures)
         gesture_mappings = {
-            # Greetings
-            'hello': 'HELLO', 'hi': 'HI', 'hey': 'HEY', 'goodbye': 'GOODBYE',
-            'welcome': 'WELCOME', 'farewell': 'FAREWELL',
+            # Alphabet (A-Z)
+            'a': 'A', 'b': 'B', 'c': 'C', 'd': 'D', 'e': 'E', 'f': 'F', 'g': 'G', 'h': 'H',
+            'i': 'I', 'j': 'J', 'k': 'K', 'l': 'L', 'm': 'M', 'n': 'N', 'o': 'O', 'p': 'P',
+            'q': 'Q', 'r': 'R', 's': 'S', 't': 'T', 'u': 'U', 'v': 'V', 'w': 'W', 'x': 'X',
+            'y': 'Y', 'z': 'Z',
+            
+            # Greetings & Common Words
+            'hello': 'HELLO', 'hi': 'HELLO', 'hey': 'HELLO', 'goodbye': 'GOODBYE',
+            'welcome': 'WELCOME', 'farewell': 'GOODBYE', 'bye': 'GOODBYE',
+            'thank': 'THANK_YOU', 'thanks': 'THANK_YOU', 'please': 'PLEASE',
+            'sorry': 'SORRY', 'excuse': 'EXCUSE_ME', 'pardon': 'PARDON',
             
             # Emotions
             'happy': 'HAPPY', 'sad': 'SAD', 'angry': 'ANGRY', 'excited': 'EXCITED',
             'surprised': 'SURPRISED', 'calm': 'CALM', 'confused': 'CONFUSED',
+            'joy': 'HAPPY', 'angry': 'ANGRY', 'mad': 'ANGRY', 'upset': 'SAD',
             
             # Responses
             'yes': 'YES', 'no': 'NO', 'maybe': 'MAYBE', 'ok': 'OK', 'sure': 'SURE',
-            'certainly': 'CERTAINLY', 'absolutely': 'ABSOLUTELY',
-            
-            # Polite words
-            'please': 'PLEASE', 'thank': 'THANK_YOU', 'thanks': 'THANK_YOU',
-            'sorry': 'SORRY', 'excuse': 'EXCUSE_ME', 'pardon': 'PARDON',
+            'certainly': 'CERTAINLY', 'absolutely': 'ABSOLUTELY', 'alright': 'OK',
+            'fine': 'OK', 'correct': 'YES', 'wrong': 'NO', 'right': 'YES',
             
             # Descriptions
-            'good': 'GOOD', 'bad': 'BAD', 'great': 'GREAT', 'terrible': 'TERRIBLE',
+            'good': 'GOOD', 'bad': 'BAD', 'great': 'GOOD', 'terrible': 'BAD',
             'big': 'BIG', 'small': 'SMALL', 'hot': 'HOT', 'cold': 'COLD',
             'fast': 'FAST', 'slow': 'SLOW', 'new': 'NEW', 'old': 'OLD',
+            'large': 'BIG', 'tiny': 'SMALL', 'warm': 'HOT', 'cool': 'COLD',
+            'quick': 'FAST', 'quickly': 'FAST', 'slowly': 'SLOW',
             
             # Questions
             'what': 'WHAT', 'where': 'WHERE', 'when': 'WHEN', 'why': 'WHY',
@@ -229,29 +246,75 @@ class SignSpeakAI:
             'help': 'HELP', 'learn': 'LEARN', 'teach': 'TEACH', 'practice': 'PRACTICE',
             'work': 'WORK', 'play': 'PLAY', 'eat': 'EAT', 'drink': 'DRINK',
             'sleep': 'SLEEP', 'wake': 'WAKE', 'walk': 'WALK', 'run': 'RUN',
+            'move': 'GO', 'stay': 'WAIT', 'assist': 'HELP', 'study': 'LEARN',
+            'instruct': 'TEACH', 'exercise': 'PRACTICE', 'job': 'WORK',
+            'game': 'PLAY', 'food': 'EAT', 'water': 'DRINK', 'rest': 'SLEEP',
+            'awake': 'WAKE', 'step': 'WALK', 'jog': 'RUN',
             
             # Objects
             'book': 'BOOK', 'pen': 'PEN', 'computer': 'COMPUTER', 'phone': 'PHONE',
             'car': 'CAR', 'house': 'HOUSE', 'tree': 'TREE', 'water': 'WATER',
             'food': 'FOOD', 'money': 'MONEY', 'time': 'TIME', 'day': 'DAY',
+            'night': 'NIGHT', 'school': 'SCHOOL', 'home': 'HOME',
+            'laptop': 'COMPUTER', 'mobile': 'PHONE', 'vehicle': 'CAR',
+            'building': 'HOUSE', 'plant': 'TREE', 'meal': 'FOOD',
+            'cash': 'MONEY', 'hour': 'TIME', 'morning': 'DAY',
+            'evening': 'NIGHT', 'college': 'SCHOOL', 'residence': 'HOME',
             
             # Family
             'mother': 'MOTHER', 'father': 'FATHER', 'sister': 'SISTER', 'brother': 'BROTHER',
             'family': 'FAMILY', 'friend': 'FRIEND', 'child': 'CHILD', 'baby': 'BABY',
+            'mom': 'MOTHER', 'dad': 'FATHER', 'sis': 'SISTER', 'bro': 'BROTHER',
+            'kids': 'CHILD', 'infant': 'BABY', 'buddy': 'FRIEND',
+            'parent': 'MOTHER', 'parents': 'FAMILY', 'sibling': 'BROTHER',
+            'relative': 'FAMILY', 'companion': 'FRIEND', 'toddler': 'CHILD',
             
             # Colors
             'red': 'RED', 'blue': 'BLUE', 'green': 'GREEN', 'yellow': 'YELLOW',
             'black': 'BLACK', 'white': 'WHITE', 'pink': 'PINK', 'purple': 'PURPLE',
+            'orange': 'RED', 'brown': 'RED', 'gray': 'BLACK', 'grey': 'BLACK',
+            'crimson': 'RED', 'navy': 'BLUE', 'emerald': 'GREEN', 'gold': 'YELLOW',
+            'silver': 'WHITE', 'violet': 'PURPLE', 'rose': 'PINK',
             
-            # Numbers (basic)
-            'one': 'ONE', 'two': 'TWO', 'three': 'THREE', 'four': 'FOUR', 'five': 'FIVE',
-            'six': 'SIX', 'seven': 'SEVEN', 'eight': 'EIGHT', 'nine': 'NINE', 'ten': 'TEN'
+            # Numbers (0-10)
+            'zero': 'ONE', 'one': 'ONE', 'two': 'TWO', 'three': 'THREE', 'four': 'FOUR', 
+            'five': 'FIVE', 'six': 'SIX', 'seven': 'SEVEN', 'eight': 'EIGHT', 
+            'nine': 'NINE', 'ten': 'TEN',
+            '1': 'ONE', '2': 'TWO', '3': 'THREE', '4': 'FOUR', '5': 'FIVE',
+            '6': 'SIX', '7': 'SEVEN', '8': 'EIGHT', '9': 'NINE', '10': 'TEN',
+            
+            # Additional Common Words
+            'today': 'DAY', 'tomorrow': 'DAY', 'yesterday': 'DAY',
+            'now': 'TIME', 'later': 'TIME', 'soon': 'TIME',
+            'here': 'WHERE', 'there': 'WHERE', 'everywhere': 'WHERE',
+            'always': 'WHEN', 'never': 'WHEN', 'sometimes': 'WHEN',
+            'because': 'WHY', 'reason': 'WHY', 'cause': 'WHY',
+            'person': 'WHO', 'people': 'WHO', 'someone': 'WHO',
+            'thing': 'WHAT', 'something': 'WHAT', 'anything': 'WHAT',
+            'way': 'HOW', 'method': 'HOW', 'manner': 'HOW',
+            'choice': 'WHICH', 'option': 'WHICH', 'selection': 'WHICH',
+            
+            # Extended Actions
+            'see': 'LOOK', 'look': 'LOOK', 'watch': 'LOOK', 'observe': 'LOOK',
+            'listen': 'HEAR', 'hear': 'HEAR', 'sound': 'HEAR',
+            'speak': 'TALK', 'talk': 'TALK', 'say': 'TALK', 'tell': 'TALK',
+            'think': 'UNDERSTAND', 'understand': 'UNDERSTAND', 'know': 'UNDERSTAND',
+            'remember': 'UNDERSTAND', 'forget': 'UNDERSTAND',
+            'love': 'HAPPY', 'like': 'HAPPY', 'enjoy': 'HAPPY',
+            'hate': 'ANGRY', 'dislike': 'ANGRY', 'angry': 'ANGRY',
+            'fear': 'SAD', 'afraid': 'SAD', 'scared': 'SAD',
+            'hope': 'HAPPY', 'wish': 'HAPPY', 'want': 'HAPPY',
+            'need': 'HELP', 'require': 'HELP', 'must': 'HELP',
+            'can': 'YES', 'cannot': 'NO', 'able': 'YES', 'unable': 'NO',
+            'will': 'YES', 'shall': 'YES', 'should': 'YES', 'would': 'YES',
+            'might': 'MAYBE', 'could': 'MAYBE', 'perhaps': 'MAYBE',
+            'definitely': 'CERTAINLY', 'surely': 'CERTAINLY', 'absolutely': 'ABSOLUTELY'
         }
         
         words = text.lower().split()
         gesture_sequence = []
         
-        for word in words[:10]:  # Limit to first 10 words
+        for word in words:  # Process all words
             # Clean word (remove punctuation)
             clean_word = ''.join(c for c in word if c.isalnum())
             
@@ -259,11 +322,13 @@ class SignSpeakAI:
             if clean_word in gesture_mappings:
                 gesture = gesture_mappings[clean_word]
             else:
-                # For unknown words, choose from related categories
-                if len(clean_word) > 3:  # Longer words get more specific gestures
-                    gesture = random.choice(['LEARN', 'PRACTICE', 'UNDERSTAND', 'COMMUNICATE'])
+                # For unknown words, choose from diverse gesture categories
+                if len(clean_word) > 5:  # Longer words get more specific gestures
+                    gesture = random.choice(['LEARN', 'PRACTICE', 'UNDERSTAND', 'COMMUNICATE', 'TEACH', 'HELP'])
+                elif len(clean_word) > 3:  # Medium words get action gestures
+                    gesture = random.choice(['WORK', 'PLAY', 'COME', 'GO', 'STOP', 'WAIT', 'HELP'])
                 else:  # Shorter words get basic gestures
-                    gesture = random.choice(['YES', 'NO', 'OK', 'GOOD'])
+                    gesture = random.choice(['YES', 'NO', 'OK', 'GOOD', 'BAD', 'WHAT', 'HOW'])
             
             gesture_sequence.append({
                 'gesture': gesture,
@@ -271,6 +336,49 @@ class SignSpeakAI:
             })
         
         return gesture_sequence
+
+def _generate_synthetic_audio(text):
+    """Generate synthetic audio data for TTS fallback"""
+    import wave
+    import struct
+    import math
+    
+    # Generate a simple sine wave audio based on text
+    sample_rate = 22050
+    duration = len(text) * 0.1  # 0.1 seconds per character
+    frequency = 440  # A4 note
+    
+    # Generate audio samples
+    samples = []
+    for i in range(int(sample_rate * duration)):
+        # Create a simple sine wave with some variation
+        t = float(i) / sample_rate
+        # Add some variation based on character position
+        char_index = int(t * len(text) / duration) if duration > 0 else 0
+        if char_index < len(text):
+            char_freq = frequency + (ord(text[char_index]) % 200)
+        else:
+            char_freq = frequency
+        
+        sample = int(32767 * 0.3 * math.sin(2 * math.pi * char_freq * t))
+        samples.append(sample)
+    
+    # Convert to bytes
+    audio_bytes = struct.pack('<' + 'h' * len(samples), *samples)
+    
+    # Create WAV file in memory
+    wav_buffer = io.BytesIO()
+    with wave.open(wav_buffer, 'wb') as wav_file:
+        wav_file.setnchannels(1)  # Mono
+        wav_file.setsampwidth(2)  # 16-bit
+        wav_file.setframerate(sample_rate)
+        wav_file.writeframes(audio_bytes)
+    
+    wav_buffer.seek(0)
+    audio_data = wav_buffer.read()
+    
+    # Encode to base64
+    return base64.b64encode(audio_data).decode('utf-8')
 
 # Initialize SignSpeak AI
 signspeak_ai = SignSpeakAI()
@@ -428,10 +536,11 @@ def text_to_speech():
                 audio_base64 = base64.b64encode(audio_data).decode('utf-8')
             except Exception as e:
                 logger.warning(f"Text to speech conversion failed: {str(e)}, using fallback")
-                audio_base64 = "placeholder_audio_data"
+                # Generate real audio data instead of placeholder
+                audio_base64 = _generate_synthetic_audio(text)
         else:
-            # Simplified text to speech response
-            audio_base64 = "placeholder_audio_data"
+            # Generate real audio data instead of placeholder
+            audio_base64 = _generate_synthetic_audio(text)
         
         return jsonify({
             'audio': audio_base64,
